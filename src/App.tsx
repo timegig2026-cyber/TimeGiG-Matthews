@@ -28,9 +28,26 @@ import { playCoinSound } from './utils/audio';
 const ADMIN_EMAIL = 'timegig2026@gmail.com';
 
 export default function App() {
-  const [selectedSubscription, setSelectedSubscription] = useState<SubscriptionType | null>(null);
+  const [selectedSubscription, setSelectedSubscription] = useState<SubscriptionType | null>(() => {
+    try {
+      const saved = localStorage.getItem('timegig_selectedSubscription');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
   const [pendingSubscription, setPendingSubscription] = useState<SubscriptionType | null>(null);
-  const [isRegistered, setIsRegistered] = useState<boolean>(false);
+
+  const [isRegistered, setIsRegistered] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('timegig_isRegistered');
+      return saved ? JSON.parse(saved) : false;
+    } catch {
+      return false;
+    }
+  });
+
   const [authMode, setAuthMode] = useState<'select' | 'register' | 'login'>('select');
   const [activeTab, setActiveTab] = useState<TabType>('seekers');
   const [emptyStyle, setEmptyStyle] = useState<EmptyStyle>('minimalist');
@@ -38,28 +55,108 @@ export default function App() {
 
   // Tenant Workflow State
   const [isTenantModalOpen, setIsTenantModalOpen] = useState<boolean>(false);
-  const [verification, setVerification] = useState<VerificationSubmission | null>(null);
-  const [tenantPoP, setTenantPoP] = useState<TenantPoPSubmission | null>(null);
+  const [verification, setVerification] = useState<VerificationSubmission | null>(() => {
+    try {
+      const saved = localStorage.getItem('timegig_verification');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const [tenantPoP, setTenantPoP] = useState<TenantPoPSubmission | null>(() => {
+    try {
+      const saved = localStorage.getItem('timegig_tenantPoP');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
 
   // Referred Users from Admin Link State
-  const [referredUsers, setReferredUsers] = useState<ReferredUser[]>([]);
+  const [referredUsers, setReferredUsers] = useState<ReferredUser[]>(() => {
+    try {
+      const saved = localStorage.getItem('timegig_referredUsers');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
 
   // User Profile State
-  const [profile, setProfile] = useState<UserProfile>({
-    name: 'Matthews',
-    middleName: '',
-    surname: 'Dlamini',
-    contactNumber: '082 123 4567',
-    email: 'timegig2026@gmail.com',
-    socialMediaLinks: [
-      { id: '1', platform: 'LinkedIn', url: 'https://linkedin.com/in/matthews-tenant' },
-      { id: '2', platform: 'Twitter / X', url: 'https://x.com/timegig' },
-    ],
-    address: '42 Sandton Drive',
-    location: 'Sandton, Johannesburg',
-    province: 'Gauteng',
-    profilePicApprovalStatus: 'pending',
+  const [profile, setProfile] = useState<UserProfile>(() => {
+    try {
+      const saved = localStorage.getItem('timegig_profile');
+      return saved ? JSON.parse(saved) : {
+        name: 'Matthews',
+        middleName: '',
+        surname: 'Dlamini',
+        contactNumber: '082 123 4567',
+        email: 'timegig2026@gmail.com',
+        socialMediaLinks: [
+          { id: '1', platform: 'LinkedIn', url: 'https://linkedin.com/in/matthews-tenant' },
+          { id: '2', platform: 'Twitter / X', url: 'https://x.com/timegig' },
+        ],
+        address: '42 Sandton Drive',
+        location: 'Sandton, Johannesburg',
+        province: 'Gauteng',
+        profilePicApprovalStatus: 'pending',
+      };
+    } catch {
+      return {
+        name: 'Matthews',
+        middleName: '',
+        surname: 'Dlamini',
+        contactNumber: '082 123 4567',
+        email: 'timegig2026@gmail.com',
+        socialMediaLinks: [
+          { id: '1', platform: 'LinkedIn', url: 'https://linkedin.com/in/matthews-tenant' },
+          { id: '2', platform: 'Twitter / X', url: 'https://x.com/timegig' },
+        ],
+        address: '42 Sandton Drive',
+        location: 'Sandton, Johannesburg',
+        province: 'Gauteng',
+        profilePicApprovalStatus: 'pending',
+      };
+    }
   });
+
+  // Sync state to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('timegig_selectedSubscription', JSON.stringify(selectedSubscription));
+    } catch {}
+  }, [selectedSubscription]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('timegig_isRegistered', JSON.stringify(isRegistered));
+    } catch {}
+  }, [isRegistered]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('timegig_profile', JSON.stringify(profile));
+    } catch {}
+  }, [profile]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('timegig_verification', JSON.stringify(verification));
+    } catch {}
+  }, [verification]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('timegig_tenantPoP', JSON.stringify(tenantPoP));
+    } catch {}
+  }, [tenantPoP]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('timegig_referredUsers', JSON.stringify(referredUsers));
+    } catch {}
+  }, [referredUsers]);
 
   // Admin access strictly restricted to timegig2026@gmail.com
   const isAdminUser = profile.email?.trim().toLowerCase() === ADMIN_EMAIL.toLowerCase();
@@ -71,7 +168,7 @@ export default function App() {
     }
   }, [isAdminUser, isAdminOpen]);
 
-  // Check URL params on load: if user joins via admin referral link, start from scratch
+  // Check URL params on load: if user joins via admin referral link, start fresh registration session without wiping admin records
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
@@ -85,8 +182,6 @@ export default function App() {
         setIsRegistered(false);
         setIsAdminOpen(false);
         setIsTenantModalOpen(false);
-        setVerification(null);
-        setTenantPoP(null);
       }
     }
   }, []);
@@ -179,13 +274,16 @@ export default function App() {
     setIsRegistered(false);
     setIsAdminOpen(false);
     setIsTenantModalOpen(false);
-    setVerification(null);
-    setTenantPoP(null);
     setAuthMode('select');
     setProfile((prev) => ({
       ...prev,
       email: '',
     }));
+    try {
+      localStorage.removeItem('timegig_selectedSubscription');
+      localStorage.removeItem('timegig_isRegistered');
+      localStorage.removeItem('timegig_profile');
+    } catch {}
   };
 
   // Step 1: User submits Verification (Profile face picture & ID document)
