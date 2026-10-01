@@ -763,6 +763,9 @@ export const AdminOverlay: React.FC<AdminOverlayProps> = ({
 
                           <div className="text-[11px] text-slate-500 mt-0.5 flex flex-wrap items-center gap-2">
                             <span>Joined: {user.joinedAt}</span>
+                            <span className="font-mono font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-1.5 py-0.5 rounded">
+                              Subscription Payment: {user.subscriptionType === 'tenant' ? 'R299,99 / month' : 'R99,00 / month'}
+                            </span>
                             {user.notes && (
                               <span className="text-slate-400">· {user.notes}</span>
                             )}
