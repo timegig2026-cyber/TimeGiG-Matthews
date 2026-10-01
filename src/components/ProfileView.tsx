@@ -18,6 +18,7 @@ import {
   Calendar,
   Lock,
   ExternalLink,
+  LogOut,
 } from 'lucide-react';
 import type { UserProfile, SocialLink, VerificationSubmission } from '../types';
 
@@ -27,6 +28,7 @@ interface ProfileViewProps {
   verification: VerificationSubmission | null;
   onOpenTenantPortal: () => void;
   isAdmin?: boolean;
+  onLogout?: () => void;
 }
 
 const SA_PROVINCES = [
@@ -47,6 +49,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   verification,
   onOpenTenantPortal,
   isAdmin = false,
+  onLogout,
 }) => {
   // Form state initialized from profile or verification
   const [name, setName] = useState(profile.name || 'Matthews');
@@ -577,8 +580,8 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           </div>
         </div>
 
-        {/* Save Changes Button */}
-        <div className="pt-4 border-t border-slate-100">
+        {/* Save Changes Button & Logout Button */}
+        <div className="pt-4 border-t border-slate-100 space-y-2">
           <button
             type="submit"
             className="w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white font-semibold text-xs transition-all shadow-sm shadow-indigo-600/20 cursor-pointer flex items-center justify-center gap-1.5"
@@ -586,6 +589,17 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
             <Save className="w-3.5 h-3.5" />
             <span>Save Profile</span>
           </button>
+
+          {onLogout && (
+            <button
+              type="button"
+              onClick={onLogout}
+              className="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-700 hover:text-rose-700 border border-slate-200 hover:border-rose-200 font-semibold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Log Out / Sign Out</span>
+            </button>
+          )}
         </div>
       </form>
     </div>

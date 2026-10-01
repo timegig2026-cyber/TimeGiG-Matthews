@@ -182,6 +182,21 @@ export default function App() {
     setIsAdminOpen(true);
   };
 
+  // Logout Handler: resets session back to subscription selection / sign out
+  const handleLogout = () => {
+    setSelectedSubscription(null);
+    setPendingSubscription(null);
+    setIsRegistered(false);
+    setIsAdminOpen(false);
+    setIsTenantModalOpen(false);
+    setVerification(null);
+    setTenantPoP(null);
+    setProfile((prev) => ({
+      ...prev,
+      email: '',
+    }));
+  };
+
   // Step 1: User submits Verification (Profile face picture & ID document)
   const handleSubmitVerification = (data: {
     facePhotoUrl: string;
@@ -326,7 +341,6 @@ export default function App() {
       return (
         <SubscriptionSelectionScreen
           onSelect={handleSelectSubscription}
-          onSkipAdmin={handleSkipAdmin}
         />
       );
     }
@@ -439,6 +453,7 @@ export default function App() {
                 if (isAdminUser) setIsAdminOpen(true);
               }}
               isAdmin={isAdminUser}
+              onLogout={handleLogout}
             />
           ) : (
             <div className="flex-1 flex flex-col justify-center">

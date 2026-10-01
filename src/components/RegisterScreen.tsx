@@ -110,9 +110,9 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
 
         {/* Card Container */}
         <div className="p-6 sm:p-8 rounded-[32px] bg-white border border-slate-200/90 shadow-xl shadow-slate-200/50">
-          {/* Fast-track Admin Skip */}
-          {onSkipAdmin && (
-            <div className="mb-6 pb-6 border-b border-slate-100">
+          {/* Fast-track Admin Skip - Only visible when admin email is entered */}
+          {onSkipAdmin && email.trim().toLowerCase() === 'timegig2026@gmail.com' && (
+            <div className="mb-6 pb-6 border-b border-slate-100 animate-in fade-in">
               <button
                 type="button"
                 onClick={onSkipAdmin}
