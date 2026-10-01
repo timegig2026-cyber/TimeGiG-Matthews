@@ -19,6 +19,7 @@ import { AdminFloatingButton } from './components/AdminFloatingButton';
 import { AdminOverlay } from './components/AdminOverlay';
 import { SubscriptionSelectionScreen } from './components/SubscriptionSelectionScreen';
 import { RegisterScreen } from './components/RegisterScreen';
+import { LoginScreen } from './components/LoginScreen';
 import { TenantOnboardingModal } from './components/TenantOnboardingModal';
 import { ProfileView } from './components/ProfileView';
 import { Building2, Clock, CheckCircle2 } from 'lucide-react';
@@ -30,6 +31,7 @@ export default function App() {
   const [selectedSubscription, setSelectedSubscription] = useState<SubscriptionType | null>(null);
   const [pendingSubscription, setPendingSubscription] = useState<SubscriptionType | null>(null);
   const [isRegistered, setIsRegistered] = useState<boolean>(false);
+  const [authMode, setAuthMode] = useState<'select' | 'register' | 'login'>('select');
   const [activeTab, setActiveTab] = useState<TabType>('seekers');
   const [emptyStyle, setEmptyStyle] = useState<EmptyStyle>('minimalist');
   const [isAdminOpen, setIsAdminOpen] = useState<boolean>(false);
@@ -40,33 +42,7 @@ export default function App() {
   const [tenantPoP, setTenantPoP] = useState<TenantPoPSubmission | null>(null);
 
   // Referred Users from Admin Link State
-  const [referredUsers, setReferredUsers] = useState<ReferredUser[]>([
-    {
-      id: 'REF-101',
-      email: 'sipho.mkhize@gmail.com',
-      subscriptionType: 'tenant',
-      joinedAt: 'Today at 08:35',
-      status: 'pending',
-      notes: 'Joined via Admin WhatsApp referral link',
-    },
-    {
-      id: 'REF-102',
-      email: 'lerato.khumalo@outlook.com',
-      subscriptionType: 'user',
-      joinedAt: 'Today at 09:12',
-      status: 'pending',
-      notes: 'Joined via Admin Twitter/X link',
-    },
-    {
-      id: 'REF-103',
-      email: 'thabo.ndlovu@gmail.com',
-      subscriptionType: 'tenant',
-      joinedAt: 'Yesterday at 16:40',
-      status: 'approved',
-      reviewedAt: new Date(Date.now() - 86400000).toISOString(),
-      notes: 'Approved by admin',
-    },
-  ]);
+  const [referredUsers, setReferredUsers] = useState<ReferredUser[]>([]);
 
   // User Profile State
   const [profile, setProfile] = useState<UserProfile>({
@@ -182,6 +158,20 @@ export default function App() {
     setIsAdminOpen(true);
   };
 
+  // Login Handler: lets registered users sign in with their credentials
+  const handleLogin = (data: { email: string; password: string }) => {
+    const isAdmin = data.email.trim().toLowerCase() === ADMIN_EMAIL.toLowerCase();
+    setProfile((prev) => ({
+      ...prev,
+      email: data.email,
+    }));
+    setSelectedSubscription('tenant');
+    setIsRegistered(true);
+    if (isAdmin) {
+      setIsAdminOpen(true);
+    }
+  };
+
   // Logout Handler: resets session back to subscription selection / sign out
   const handleLogout = () => {
     setSelectedSubscription(null);
@@ -191,6 +181,7 @@ export default function App() {
     setIsTenantModalOpen(false);
     setVerification(null);
     setTenantPoP(null);
+    setAuthMode('select');
     setProfile((prev) => ({
       ...prev,
       email: '',
@@ -337,10 +328,20 @@ export default function App() {
   // Step 1: Subscription Choice (Tenant Subscription or User Subscription)
   // Step 2: Register Account with Email & Password + Accept Terms and Conditions then click Signup
   if (!isRegistered || !selectedSubscription) {
+    if (authMode === 'login') {
+      return (
+        <LoginScreen
+          onBack={() => setAuthMode('select')}
+          onLogin={handleLogin}
+        />
+      );
+    }
+
     if (!pendingSubscription) {
       return (
         <SubscriptionSelectionScreen
           onSelect={handleSelectSubscription}
+          onOpenLogin={() => setAuthMode('login')}
         />
       );
     }
@@ -348,9 +349,13 @@ export default function App() {
     return (
       <RegisterScreen
         subscription={pendingSubscription}
-        onBack={() => setPendingSubscription(null)}
+        onBack={() => {
+          setPendingSubscription(null);
+          setAuthMode('select');
+        }}
         onSignup={handleSignup}
         onSkipAdmin={handleSkipAdmin}
+        onOpenLogin={() => setAuthMode('login')}
       />
     );
   }
@@ -419,6 +424,7 @@ export default function App() {
           referredUsers={referredUsers}
           onApproveReferredUser={handleApproveReferredUser}
           onRejectReferredUser={handleRejectReferredUser}
+          selectedSubscription={selectedSubscription}
         />
       )}
 

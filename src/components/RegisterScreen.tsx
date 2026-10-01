@@ -20,6 +20,7 @@ interface RegisterScreenProps {
   onBack: () => void;
   onSignup: (data: { email: string; password: string }) => void;
   onSkipAdmin?: () => void;
+  onOpenLogin?: () => void;
 }
 
 export const RegisterScreen: React.FC<RegisterScreenProps> = ({
@@ -27,6 +28,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
   onBack,
   onSignup,
   onSkipAdmin,
+  onOpenLogin,
 }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -262,6 +264,22 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
               </button>
             </div>
           </form>
+
+          {/* Already registered login link */}
+          {onOpenLogin && (
+            <div className="mt-6 text-center pt-4 border-t border-slate-100">
+              <p className="text-xs text-slate-500">
+                Already have an account?{' '}
+                <button
+                  type="button"
+                  onClick={onOpenLogin}
+                  className="text-indigo-600 font-semibold hover:underline cursor-pointer"
+                >
+                  Log in here
+                </button>
+              </p>
+            </div>
+          )}
         </div>
       </div>
 

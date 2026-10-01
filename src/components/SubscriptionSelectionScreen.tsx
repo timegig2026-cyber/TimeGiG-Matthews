@@ -4,10 +4,12 @@ import type { SubscriptionType } from '../types';
 
 interface SubscriptionSelectionScreenProps {
   onSelect: (type: SubscriptionType) => void;
+  onOpenLogin?: () => void;
 }
 
 export const SubscriptionSelectionScreen: React.FC<SubscriptionSelectionScreenProps> = ({
   onSelect,
+  onOpenLogin,
 }) => {
   return (
     <div className="min-h-screen w-full bg-white text-slate-900 flex flex-col items-center justify-center p-6 relative overflow-hidden select-none">
@@ -85,6 +87,22 @@ export const SubscriptionSelectionScreen: React.FC<SubscriptionSelectionScreenPr
             </div>
           </button>
         </div>
+
+        {/* Already registered login link */}
+        {onOpenLogin && (
+          <div className="mt-8 text-center">
+            <p className="text-xs text-slate-500">
+              Already have an account?{' '}
+              <button
+                type="button"
+                onClick={onOpenLogin}
+                className="text-indigo-600 font-semibold hover:underline cursor-pointer"
+              >
+                Log in here
+              </button>
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

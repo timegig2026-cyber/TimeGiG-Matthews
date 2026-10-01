@@ -31,7 +31,7 @@ import {
   UserX,
   ShieldAlert,
 } from 'lucide-react';
-import type { AdminTabType, VerificationSubmission, TenantPoPSubmission, ReferredUser } from '../types';
+import type { AdminTabType, VerificationSubmission, TenantPoPSubmission, ReferredUser, SubscriptionType } from '../types';
 import { AdminBottomNavBar } from './AdminBottomNavBar';
 import { playCoinSound } from '../utils/audio';
 
@@ -47,6 +47,7 @@ interface AdminOverlayProps {
   referredUsers: ReferredUser[];
   onApproveReferredUser: (id: string) => void;
   onRejectReferredUser: (id: string) => void;
+  selectedSubscription?: SubscriptionType | null;
 }
 
 const tabLabels: Record<AdminTabType, string> = {
@@ -68,6 +69,7 @@ export const AdminOverlay: React.FC<AdminOverlayProps> = ({
   referredUsers = [],
   onApproveReferredUser,
   onRejectReferredUser,
+  selectedSubscription,
 }) => {
   const [activeAdminTab, setActiveAdminTab] = useState<AdminTabType>('overview');
 
@@ -110,47 +112,21 @@ export const AdminOverlay: React.FC<AdminOverlayProps> = ({
     playCoinSound();
     onApproveTenantPoP();
   };
-  const [baseOnlineTenants, setBaseOnlineTenants] = useState<number>(42);
-  const [baseSubscriptionUsers, setBaseSubscriptionUsers] = useState<number>(128);
-  const [liveVisits, setLiveVisits] = useState<number>(342);
-
-  // Simulation timer for live traffic and online presence fluctuations
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const interval = setInterval(() => {
-      // Live visits slowly climb and oscillate
-      setLiveVisits((prev) => {
-        const delta = Math.floor(Math.random() * 3) - 1; // -1, 0, +1, +2
-        const next = prev + (delta >= 0 ? delta + 1 : 0);
-        return Math.max(300, next);
-      });
-
-      // Online tenants slight organic fluctuation (±1)
-      setBaseOnlineTenants((prev) => {
-        const delta = Math.floor(Math.random() * 3) - 1;
-        return Math.max(38, Math.min(52, prev + delta));
-      });
-
-      // Subscription users slight organic fluctuation (±1)
-      setBaseSubscriptionUsers((prev) => {
-        const delta = Math.floor(Math.random() * 3) - 1;
-        return Math.max(115, Math.min(145, prev + delta));
-      });
-    }, 3200);
-
-    return () => clearInterval(interval);
-  }, [isOpen]);
 
   if (!isOpen) return null;
 
-  // Calculate live profits:
-  // Tenant fee is R299,99 per tenant. If current session tenant is approved, add 1.
-  const totalActiveTenants = baseOnlineTenants + (tenantPoP?.status === 'approved' ? 1 : 0);
+  // Calculate real subscription profit and active metrics from actual app state:
+  const approvedReferredTenants = referredUsers.filter(u => u.subscriptionType === 'tenant' && u.status === 'approved').length;
+  const currentTenantActive = (tenantPoP?.status === 'approved' || verification?.status === 'approved' || selectedSubscription === 'tenant') ? 1 : 0;
+  const totalActiveTenants = approvedReferredTenants + currentTenantActive;
   const tenantSubscriptionProfit = totalActiveTenants * 299.99;
 
-  // User subscription fee (e.g. R99,00 per user)
-  const userSubscriptionProfit = baseSubscriptionUsers * 99.0;
+  const approvedReferredUsers = referredUsers.filter(u => u.subscriptionType === 'user' && u.status === 'approved').length;
+  const currentUserActive = (selectedSubscription === 'user') ? 1 : 0;
+  const totalActiveUsers = approvedReferredUsers + currentUserActive;
+  const userSubscriptionProfit = totalActiveUsers * 99.00;
+
+  const liveVisits = 1 + referredUsers.length + totalActiveTenants + totalActiveUsers;
 
   const formatZAR = (amount: number) => {
     return new Intl.NumberFormat('en-ZA', {
@@ -315,7 +291,7 @@ export const AdminOverlay: React.FC<AdminOverlayProps> = ({
                   <div className="pt-1.5 border-t border-purple-50 flex items-center justify-between text-[11px] text-slate-500">
                     <span>Subscribed Active Users:</span>
                     <strong className="font-mono text-purple-700 font-bold">
-                      {baseSubscriptionUsers} Users
+                      {totalActiveUsers} Users
                     </strong>
                   </div>
                 </div>
@@ -365,7 +341,7 @@ export const AdminOverlay: React.FC<AdminOverlayProps> = ({
                     </div>
                   </div>
                   <div className="text-xl sm:text-2xl font-extrabold font-mono text-slate-900 tabular-nums my-0.5">
-                    {baseSubscriptionUsers}
+                    {totalActiveUsers}
                   </div>
                   <div className="flex items-center gap-1 text-[11px] text-emerald-600 font-medium">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
