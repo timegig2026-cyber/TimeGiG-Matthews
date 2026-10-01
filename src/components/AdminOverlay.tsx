@@ -3,6 +3,7 @@ import {
   X,
   BadgeCheck,
   Building2,
+  User,
   UserCheck,
   LayoutDashboard,
   CheckCircle2,
@@ -25,8 +26,12 @@ import {
   Volume2,
   Send,
   MessageCircle,
+  Search,
+  Filter,
+  UserX,
+  ShieldAlert,
 } from 'lucide-react';
-import type { AdminTabType, VerificationSubmission, TenantPoPSubmission } from '../types';
+import type { AdminTabType, VerificationSubmission, TenantPoPSubmission, ReferredUser } from '../types';
 import { AdminBottomNavBar } from './AdminBottomNavBar';
 import { playCoinSound } from '../utils/audio';
 
@@ -39,6 +44,9 @@ interface AdminOverlayProps {
   tenantPoP: TenantPoPSubmission | null;
   onApproveTenantPoP: () => void;
   onRejectTenantPoP: (reason: string) => void;
+  referredUsers: ReferredUser[];
+  onApproveReferredUser: (id: string) => void;
+  onRejectReferredUser: (id: string) => void;
 }
 
 const tabLabels: Record<AdminTabType, string> = {
@@ -57,6 +65,9 @@ export const AdminOverlay: React.FC<AdminOverlayProps> = ({
   tenantPoP,
   onApproveTenantPoP,
   onRejectTenantPoP,
+  referredUsers = [],
+  onApproveReferredUser,
+  onRejectReferredUser,
 }) => {
   const [activeAdminTab, setActiveAdminTab] = useState<AdminTabType>('overview');
 
@@ -69,6 +80,10 @@ export const AdminOverlay: React.FC<AdminOverlayProps> = ({
     isOpen: boolean;
   }>({ type: 'verification', isOpen: false });
   const [rejectionReasonInput, setRejectionReasonInput] = useState('');
+
+  // Referred Users filter and search state
+  const [referredFilter, setReferredFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
+  const [referredSearch, setReferredSearch] = useState('');
 
   // -------------------------------------------------------------
   // Admin Share Link & Coin Sound Triggers
@@ -385,7 +400,7 @@ export const AdminOverlay: React.FC<AdminOverlayProps> = ({
                 Action Queues
               </h3>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {/* Verification Queue Shortcut */}
                 <div
                   onClick={() => setActiveAdminTab('verification')}
@@ -452,6 +467,40 @@ export const AdminOverlay: React.FC<AdminOverlayProps> = ({
                   </div>
                   <p className="text-[11px] text-slate-500 flex items-center gap-1">
                     <span>Capitec Bank transfers (15-25 min SLA)</span>
+                    <ChevronRight className="w-3 h-3 ml-auto text-slate-400" />
+                  </p>
+                </div>
+
+                {/* Referred Users Queue Shortcut */}
+                <div
+                  onClick={() => {
+                    const el = document.getElementById('referred-users-section');
+                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="p-3.5 rounded-xl border border-slate-200 hover:border-purple-400 bg-slate-50/50 hover:bg-purple-50/20 transition-all cursor-pointer shadow-2xs flex flex-col justify-between"
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+                      <Users className="w-3.5 h-3.5 text-purple-600" />
+                      <span>Admin Link Users</span>
+                    </div>
+                    <span
+                      className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
+                        referredUsers.filter((u) => u.status === 'pending').length > 0
+                          ? 'bg-amber-100 text-amber-800'
+                          : 'bg-emerald-100 text-emerald-800'
+                      }`}
+                    >
+                      {referredUsers.filter((u) => u.status === 'pending').length > 0
+                        ? `${referredUsers.filter((u) => u.status === 'pending').length} Pending`
+                        : 'Reviewed'}
+                    </span>
+                  </div>
+                  <div className="text-sm font-bold font-mono text-slate-900 mb-0.5">
+                    {referredUsers.length} Total Users
+                  </div>
+                  <p className="text-[11px] text-slate-500 flex items-center gap-1">
+                    <span>Manage & approve accounts</span>
                     <ChevronRight className="w-3 h-3 ml-auto text-slate-400" />
                   </p>
                 </div>
@@ -562,6 +611,242 @@ export const AdminOverlay: React.FC<AdminOverlayProps> = ({
                     <span>Telegram</span>
                   </a>
                 </div>
+              </div>
+            </div>
+
+            {/* SECTION 5: USERS JOINED THROUGH ADMIN LINK (MANAGE & APPROVE) */}
+            <div
+              id="referred-users-section"
+              className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-4"
+            >
+              {/* Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+                    <Users className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-bold text-slate-900">
+                      Users Joined Through Admin Link
+                    </h3>
+                    <p className="text-[11px] text-slate-500">
+                      Review, manage, and approve new accounts registered via your personal link
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${
+                      referredUsers.filter((u) => u.status === 'pending').length > 0
+                        ? 'bg-amber-100 text-amber-800'
+                        : 'bg-emerald-100 text-emerald-800'
+                    }`}
+                  >
+                    {referredUsers.filter((u) => u.status === 'pending').length} Pending Approval
+                  </span>
+                </div>
+              </div>
+
+              {/* Stats Summary */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
+                <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                  <div className="text-base font-extrabold font-mono text-slate-900">
+                    {referredUsers.length}
+                  </div>
+                  <div className="text-[10px] text-slate-500 font-medium">Total Joined</div>
+                </div>
+                <div className="p-2.5 rounded-xl bg-amber-50/60 border border-amber-100">
+                  <div className="text-base font-extrabold font-mono text-amber-700">
+                    {referredUsers.filter((u) => u.status === 'pending').length}
+                  </div>
+                  <div className="text-[10px] text-amber-700 font-medium">Pending</div>
+                </div>
+                <div className="p-2.5 rounded-xl bg-emerald-50/60 border border-emerald-100">
+                  <div className="text-base font-extrabold font-mono text-emerald-700">
+                    {referredUsers.filter((u) => u.status === 'approved').length}
+                  </div>
+                  <div className="text-[10px] text-emerald-700 font-medium">Approved</div>
+                </div>
+                <div className="p-2.5 rounded-xl bg-rose-50/60 border border-rose-100">
+                  <div className="text-base font-extrabold font-mono text-rose-700">
+                    {referredUsers.filter((u) => u.status === 'rejected').length}
+                  </div>
+                  <div className="text-[10px] text-rose-700 font-medium">Rejected</div>
+                </div>
+              </div>
+
+              {/* Filter Pills & Search */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-1">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {(['all', 'pending', 'approved', 'rejected'] as const).map((filter) => {
+                    const count =
+                      filter === 'all'
+                        ? referredUsers.length
+                        : referredUsers.filter((u) => u.status === filter).length;
+                    return (
+                      <button
+                        key={filter}
+                        type="button"
+                        onClick={() => setReferredFilter(filter)}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer capitalize ${
+                          referredFilter === filter
+                            ? 'bg-slate-900 text-white shadow-xs'
+                            : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
+                        }`}
+                      >
+                        {filter} ({count})
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="relative w-full sm:w-48">
+                  <input
+                    type="text"
+                    placeholder="Search users..."
+                    value={referredSearch}
+                    onChange={(e) => setReferredSearch(e.target.value)}
+                    className="w-full px-2.5 py-1 rounded-lg border border-slate-200 text-xs pl-7 bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  />
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2 top-2" />
+                </div>
+              </div>
+
+              {/* User List */}
+              <div className="space-y-2 pt-1">
+                {referredUsers
+                  .filter((u) => {
+                    if (referredFilter !== 'all' && u.status !== referredFilter) return false;
+                    if (referredSearch.trim()) {
+                      const q = referredSearch.toLowerCase();
+                      return (
+                        u.email.toLowerCase().includes(q) ||
+                        u.subscriptionType.toLowerCase().includes(q)
+                      );
+                    }
+                    return true;
+                  })
+                  .map((user) => (
+                    <div
+                      key={user.id}
+                      className="p-3 rounded-xl border border-slate-200/90 hover:border-slate-300 bg-slate-50/40 hover:bg-white transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                    >
+                      {/* User Info */}
+                      <div className="flex items-start sm:items-center gap-3">
+                        <div
+                          className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                            user.subscriptionType === 'tenant'
+                              ? 'bg-indigo-100 text-indigo-700'
+                              : 'bg-purple-100 text-purple-700'
+                          }`}
+                        >
+                          {user.subscriptionType === 'tenant' ? (
+                            <Building2 className="w-4 h-4" />
+                          ) : (
+                            <User className="w-4 h-4" />
+                          )}
+                        </div>
+
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-bold text-slate-900">
+                              {user.email}
+                            </span>
+
+                            {/* Plan badge */}
+                            <span
+                              className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
+                                user.subscriptionType === 'tenant'
+                                  ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                                  : 'bg-purple-50 text-purple-700 border border-purple-200'
+                              }`}
+                            >
+                              {user.subscriptionType === 'tenant'
+                                ? 'Tenant Subscription'
+                                : 'User Subscription'}
+                            </span>
+
+                            {/* Status badge */}
+                            <span
+                              className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
+                                user.status === 'pending'
+                                  ? 'bg-amber-100 text-amber-800'
+                                  : user.status === 'approved'
+                                  ? 'bg-emerald-100 text-emerald-800'
+                                  : 'bg-rose-100 text-rose-800'
+                              }`}
+                            >
+                              {user.status === 'pending'
+                                ? 'Pending Approval'
+                                : user.status === 'approved'
+                                ? 'Approved'
+                                : 'Rejected'}
+                            </span>
+                          </div>
+
+                          <div className="text-[11px] text-slate-500 mt-0.5 flex flex-wrap items-center gap-2">
+                            <span>Joined: {user.joinedAt}</span>
+                            {user.notes && (
+                              <span className="text-slate-400">· {user.notes}</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                        {user.status === 'pending' && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => onRejectReferredUser(user.id)}
+                              className="px-2.5 py-1.5 rounded-lg text-rose-600 hover:bg-rose-50 border border-rose-200 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                            >
+                              <UserX className="w-3.5 h-3.5" />
+                              <span>Reject</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => onApproveReferredUser(user.id)}
+                              className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold flex items-center gap-1 shadow-xs transition-colors cursor-pointer"
+                            >
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>Approve</span>
+                            </button>
+                          </>
+                        )}
+
+                        {user.status === 'approved' && (
+                          <button
+                            type="button"
+                            onClick={() => onRejectReferredUser(user.id)}
+                            className="px-2.5 py-1 rounded-lg text-rose-600 hover:bg-rose-50 border border-rose-200 text-[11px] font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                          >
+                            <UserX className="w-3 h-3" />
+                            <span>Revoke / Reject</span>
+                          </button>
+                        )}
+
+                        {user.status === 'rejected' && (
+                          <button
+                            type="button"
+                            onClick={() => onApproveReferredUser(user.id)}
+                            className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-semibold flex items-center gap-1 shadow-xs transition-colors cursor-pointer"
+                          >
+                            <CheckCircle2 className="w-3 h-3" />
+                            <span>Re-approve</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+
+                {referredUsers.length === 0 && (
+                  <div className="p-6 text-center text-slate-400 text-xs italic">
+                    No users have joined via your admin link yet. Share the link above to invite members.
+                  </div>
+                )}
               </div>
             </div>
           </div>

@@ -4,13 +4,28 @@ import type { SubscriptionType } from '../types';
 
 interface SubscriptionSelectionScreenProps {
   onSelect: (type: SubscriptionType) => void;
+  onSkipAdmin?: () => void;
 }
 
 export const SubscriptionSelectionScreen: React.FC<SubscriptionSelectionScreenProps> = ({
   onSelect,
+  onSkipAdmin,
 }) => {
   return (
     <div className="min-h-screen w-full bg-white text-slate-900 flex flex-col items-center justify-center p-6 relative overflow-hidden select-none">
+      {/* Skip as Admin button at top right */}
+      {onSkipAdmin && (
+        <div className="absolute top-6 right-6 z-30">
+          <button
+            type="button"
+            onClick={onSkipAdmin}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-md text-xs font-bold transition-all cursor-pointer hover:scale-105 active:scale-95"
+            title="Skip all setup and enter as Admin (timegig2026@gmail.com)"
+          >
+            <span>⚡ Skip as Admin</span>
+          </button>
+        </div>
+      )}
       {/* Subtle soft ambient tint in background */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-slate-50 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 w-[350px] h-[350px] bg-indigo-50/40 rounded-full blur-3xl pointer-events-none" />

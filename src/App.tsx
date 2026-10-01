@@ -11,6 +11,7 @@ import type {
   VerificationSubmission,
   TenantPoPSubmission,
   UserProfile,
+  ReferredUser,
 } from './types';
 import { BottomNavBar } from './components/BottomNavBar';
 import { EmptyView } from './components/EmptyView';
@@ -37,6 +38,35 @@ export default function App() {
   const [isTenantModalOpen, setIsTenantModalOpen] = useState<boolean>(false);
   const [verification, setVerification] = useState<VerificationSubmission | null>(null);
   const [tenantPoP, setTenantPoP] = useState<TenantPoPSubmission | null>(null);
+
+  // Referred Users from Admin Link State
+  const [referredUsers, setReferredUsers] = useState<ReferredUser[]>([
+    {
+      id: 'REF-101',
+      email: 'sipho.mkhize@gmail.com',
+      subscriptionType: 'tenant',
+      joinedAt: 'Today at 08:35',
+      status: 'pending',
+      notes: 'Joined via Admin WhatsApp referral link',
+    },
+    {
+      id: 'REF-102',
+      email: 'lerato.khumalo@outlook.com',
+      subscriptionType: 'user',
+      joinedAt: 'Today at 09:12',
+      status: 'pending',
+      notes: 'Joined via Admin Twitter/X link',
+    },
+    {
+      id: 'REF-103',
+      email: 'thabo.ndlovu@gmail.com',
+      subscriptionType: 'tenant',
+      joinedAt: 'Yesterday at 16:40',
+      status: 'approved',
+      reviewedAt: new Date(Date.now() - 86400000).toISOString(),
+      notes: 'Approved by admin',
+    },
+  ]);
 
   // User Profile State
   const [profile, setProfile] = useState<UserProfile>({
@@ -120,10 +150,36 @@ export default function App() {
     }));
     setIsRegistered(true);
     setSelectedSubscription(pendingSubscription);
+
+    // If registering as a referred user (or non-admin), add to referred users queue for admin management & approval
+    if (data.email.trim().toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+      const newReferred: ReferredUser = {
+        id: `REF-${Date.now().toString().slice(-4)}`,
+        email: data.email,
+        subscriptionType: pendingSubscription,
+        joinedAt: 'Just now',
+        status: 'pending',
+        notes: 'Joined through Admin link',
+      };
+      setReferredUsers((prev) => [newReferred, ...prev]);
+    }
+
     if (pendingSubscription === 'tenant') {
       // Prompt tenant onboarding workflow
       setIsTenantModalOpen(true);
     }
+  };
+
+  // Fast-track Admin Skip Handler: lets admin skip through all setup steps instantly
+  const handleSkipAdmin = () => {
+    setProfile((prev) => ({
+      ...prev,
+      email: ADMIN_EMAIL,
+    }));
+    setPendingSubscription('tenant');
+    setSelectedSubscription('tenant');
+    setIsRegistered(true);
+    setIsAdminOpen(true);
   };
 
   // Step 1: User submits Verification (Profile face picture & ID document)
@@ -227,6 +283,23 @@ export default function App() {
     });
   };
 
+  // Admin Referred Users Actions
+  const handleApproveReferredUser = (id: string) => {
+    setReferredUsers((prev) =>
+      prev.map((u) =>
+        u.id === id ? { ...u, status: 'approved', reviewedAt: new Date().toISOString() } : u
+      )
+    );
+  };
+
+  const handleRejectReferredUser = (id: string) => {
+    setReferredUsers((prev) =>
+      prev.map((u) =>
+        u.id === id ? { ...u, status: 'rejected', reviewedAt: new Date().toISOString() } : u
+      )
+    );
+  };
+
   // Save profile updates
   const handleSaveProfile = (updatedProfile: UserProfile) => {
     setProfile(updatedProfile);
@@ -253,6 +326,7 @@ export default function App() {
       return (
         <SubscriptionSelectionScreen
           onSelect={handleSelectSubscription}
+          onSkipAdmin={handleSkipAdmin}
         />
       );
     }
@@ -262,6 +336,7 @@ export default function App() {
         subscription={pendingSubscription}
         onBack={() => setPendingSubscription(null)}
         onSignup={handleSignup}
+        onSkipAdmin={handleSkipAdmin}
       />
     );
   }
@@ -327,6 +402,9 @@ export default function App() {
           tenantPoP={tenantPoP}
           onApproveTenantPoP={handleApproveTenantPoP}
           onRejectTenantPoP={handleRejectTenantPoP}
+          referredUsers={referredUsers}
+          onApproveReferredUser={handleApproveReferredUser}
+          onRejectReferredUser={handleRejectReferredUser}
         />
       )}
 

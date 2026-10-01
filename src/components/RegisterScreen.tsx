@@ -19,12 +19,14 @@ interface RegisterScreenProps {
   subscription: SubscriptionType;
   onBack: () => void;
   onSignup: (data: { email: string; password: string }) => void;
+  onSkipAdmin?: () => void;
 }
 
 export const RegisterScreen: React.FC<RegisterScreenProps> = ({
   subscription,
   onBack,
   onSignup,
+  onSkipAdmin,
 }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -108,6 +110,19 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
 
         {/* Card Container */}
         <div className="p-6 sm:p-8 rounded-[32px] bg-white border border-slate-200/90 shadow-xl shadow-slate-200/50">
+          {/* Fast-track Admin Skip */}
+          {onSkipAdmin && (
+            <div className="mb-6 pb-6 border-b border-slate-100">
+              <button
+                type="button"
+                onClick={onSkipAdmin}
+                className="w-full py-2.5 px-4 rounded-xl font-bold text-xs bg-indigo-600 hover:bg-indigo-700 text-white shadow-md flex items-center justify-center gap-2 transition-all cursor-pointer hover:scale-[1.01] active:scale-95"
+              >
+                <span>⚡ Skip & Open Admin (timegig2026@gmail.com)</span>
+              </button>
+            </div>
+          )}
+
           <div className="text-center mb-6">
             <span className="text-xs font-semibold uppercase tracking-widest text-indigo-600">
               Create Your Account

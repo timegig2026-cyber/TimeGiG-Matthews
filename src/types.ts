@@ -60,6 +60,16 @@ export interface TenantPoPSubmission {
   rejectionReason?: string;
 }
 
+export interface ReferredUser {
+  id: string;
+  email: string;
+  subscriptionType: SubscriptionType;
+  joinedAt: string;
+  status: SubmissionStatus;
+  reviewedAt?: string;
+  notes?: string;
+}
+
 export interface TabConfig {
   id: TabType;
   label: string;
