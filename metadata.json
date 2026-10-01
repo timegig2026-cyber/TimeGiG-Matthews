@@ -1,0 +1,6 @@
+{
+  "name": "Seekers & GiGs",
+  "description": "A streamlined application featuring Seekers, GiGs, and Profile with a bottom menu bar and clean empty views.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
