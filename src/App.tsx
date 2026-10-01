@@ -17,34 +17,21 @@ import { EmptyView } from './components/EmptyView';
 import { AdminFloatingButton } from './components/AdminFloatingButton';
 import { AdminOverlay } from './components/AdminOverlay';
 import { SubscriptionSelectionScreen } from './components/SubscriptionSelectionScreen';
+import { RegisterScreen } from './components/RegisterScreen';
 import { TenantOnboardingModal } from './components/TenantOnboardingModal';
 import { ProfileView } from './components/ProfileView';
 import { Building2, Clock, CheckCircle2 } from 'lucide-react';
 import { playCoinSound } from './utils/audio';
 
+const ADMIN_EMAIL = 'timegig2026@gmail.com';
+
 export default function App() {
   const [selectedSubscription, setSelectedSubscription] = useState<SubscriptionType | null>(null);
+  const [pendingSubscription, setPendingSubscription] = useState<SubscriptionType | null>(null);
+  const [isRegistered, setIsRegistered] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<TabType>('seekers');
   const [emptyStyle, setEmptyStyle] = useState<EmptyStyle>('minimalist');
   const [isAdminOpen, setIsAdminOpen] = useState<boolean>(false);
-
-  // Check URL params on load: if user joins via admin referral link, start from scratch
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const urlParams = new URLSearchParams(window.location.search);
-      if (
-        urlParams.get('ref') === 'admin' ||
-        urlParams.get('start') === 'fresh' ||
-        urlParams.get('reset') === 'true'
-      ) {
-        setSelectedSubscription(null);
-        setIsAdminOpen(false);
-        setIsTenantModalOpen(false);
-        setVerification(null);
-        setTenantPoP(null);
-      }
-    }
-  }, []);
 
   // Tenant Workflow State
   const [isTenantModalOpen, setIsTenantModalOpen] = useState<boolean>(false);
@@ -68,6 +55,36 @@ export default function App() {
     profilePicApprovalStatus: 'pending',
   });
 
+  // Admin access strictly restricted to timegig2026@gmail.com
+  const isAdminUser = profile.email?.trim().toLowerCase() === ADMIN_EMAIL.toLowerCase();
+
+  // If user is not admin, ensure admin overlay is closed
+  useEffect(() => {
+    if (!isAdminUser && isAdminOpen) {
+      setIsAdminOpen(false);
+    }
+  }, [isAdminUser, isAdminOpen]);
+
+  // Check URL params on load: if user joins via admin referral link, start from scratch
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (
+        urlParams.get('ref') === 'admin' ||
+        urlParams.get('start') === 'fresh' ||
+        urlParams.get('reset') === 'true'
+      ) {
+        setSelectedSubscription(null);
+        setPendingSubscription(null);
+        setIsRegistered(false);
+        setIsAdminOpen(false);
+        setIsTenantModalOpen(false);
+        setVerification(null);
+        setTenantPoP(null);
+      }
+    }
+  }, []);
+
   // Keyboard shortcut: Escape closes modal or admin screen
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -89,10 +106,21 @@ export default function App() {
     setEmptyStyle((prev) => (prev === 'minimalist' ? 'blank' : 'minimalist'));
   };
 
-  // Selection handler: User can only choose one subscription
+  // Selection handler: User chooses subscription first, then proceeds to register
   const handleSelectSubscription = (sub: SubscriptionType) => {
-    setSelectedSubscription(sub);
-    if (sub === 'tenant') {
+    setPendingSubscription(sub);
+  };
+
+  // Registration handler: user registers with email & password, accepts terms and conditions, then clicks signup
+  const handleSignup = (data: { email: string; password: string }) => {
+    if (!pendingSubscription) return;
+    setProfile((prev) => ({
+      ...prev,
+      email: data.email,
+    }));
+    setIsRegistered(true);
+    setSelectedSubscription(pendingSubscription);
+    if (pendingSubscription === 'tenant') {
       // Prompt tenant onboarding workflow
       setIsTenantModalOpen(true);
     }
@@ -217,12 +245,23 @@ export default function App() {
     }
   };
 
-  // Before the app starts: Show 2 options in bubbles: Tenant Subscription & User Subscription
-  // User can only choose one subscription.
-  if (!selectedSubscription) {
+  // Flow:
+  // Step 1: Subscription Choice (Tenant Subscription or User Subscription)
+  // Step 2: Register Account with Email & Password + Accept Terms and Conditions then click Signup
+  if (!isRegistered || !selectedSubscription) {
+    if (!pendingSubscription) {
+      return (
+        <SubscriptionSelectionScreen
+          onSelect={handleSelectSubscription}
+        />
+      );
+    }
+
     return (
-      <SubscriptionSelectionScreen
-        onSelect={handleSelectSubscription}
+      <RegisterScreen
+        subscription={pendingSubscription}
+        onBack={() => setPendingSubscription(null)}
+        onSignup={handleSignup}
       />
     );
   }
@@ -272,20 +311,24 @@ export default function App() {
         )}
       </div>
 
-      {/* Floating Admin Icon - When clicked, fills the screen with white empty wallpaper and admin bottom bar */}
-      <AdminFloatingButton onClick={() => setIsAdminOpen(true)} />
+      {/* Floating Admin Icon - Only visible to timegig2026@gmail.com */}
+      {isAdminUser && (
+        <AdminFloatingButton onClick={() => setIsAdminOpen(true)} />
+      )}
 
-      {/* Full-Screen Admin Screen (Also opened by Tenant Portal button) */}
-      <AdminOverlay
-        isOpen={isAdminOpen}
-        onClose={() => setIsAdminOpen(false)}
-        verification={verification}
-        onApproveVerification={handleApproveVerification}
-        onRejectVerification={handleRejectVerification}
-        tenantPoP={tenantPoP}
-        onApproveTenantPoP={handleApproveTenantPoP}
-        onRejectTenantPoP={handleRejectTenantPoP}
-      />
+      {/* Full-Screen Admin Screen (Only accessible to timegig2026@gmail.com) */}
+      {isAdminUser && (
+        <AdminOverlay
+          isOpen={isAdminOpen}
+          onClose={() => setIsAdminOpen(false)}
+          verification={verification}
+          onApproveVerification={handleApproveVerification}
+          onRejectVerification={handleRejectVerification}
+          tenantPoP={tenantPoP}
+          onApproveTenantPoP={handleApproveTenantPoP}
+          onRejectTenantPoP={handleRejectTenantPoP}
+        />
+      )}
 
       {/* Tenant Onboarding & Proof of Payment Modal */}
       {selectedSubscription === 'tenant' && (
@@ -314,7 +357,10 @@ export default function App() {
               profile={profile}
               onSaveProfile={handleSaveProfile}
               verification={verification}
-              onOpenTenantPortal={() => setIsAdminOpen(true)}
+              onOpenTenantPortal={() => {
+                if (isAdminUser) setIsAdminOpen(true);
+              }}
+              isAdmin={isAdminUser}
             />
           ) : (
             <div className="flex-1 flex flex-col justify-center">

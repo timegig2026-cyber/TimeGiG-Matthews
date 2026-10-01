@@ -26,6 +26,7 @@ interface ProfileViewProps {
   onSaveProfile: (updatedProfile: UserProfile) => void;
   verification: VerificationSubmission | null;
   onOpenTenantPortal: () => void;
+  isAdmin?: boolean;
 }
 
 const SA_PROVINCES = [
@@ -45,6 +46,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   onSaveProfile,
   verification,
   onOpenTenantPortal,
+  isAdmin = false,
 }) => {
   // Form state initialized from profile or verification
   const [name, setName] = useState(profile.name || 'Matthews');
@@ -194,16 +196,18 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           </p>
         </div>
 
-        {/* Tenant Portal icon feature at top corner - Fills the screen when clicked */}
-        <button
-          type="button"
-          onClick={onOpenTenantPortal}
-          title="Open Tenant Portal (Full Screen)"
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 shadow-2xs text-xs font-bold transition-all cursor-pointer hover:scale-105 active:scale-95"
-        >
-          <Building2 className="w-3.5 h-3.5 text-indigo-600" />
-          <span>Tenant Portal</span>
-        </button>
+        {/* Tenant Portal icon feature at top corner - Only visible to admin (timegig2026@gmail.com) */}
+        {isAdmin && (
+          <button
+            type="button"
+            onClick={onOpenTenantPortal}
+            title="Open Tenant Portal (Full Screen)"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 shadow-2xs text-xs font-bold transition-all cursor-pointer hover:scale-105 active:scale-95"
+          >
+            <Building2 className="w-3.5 h-3.5 text-indigo-600" />
+            <span>Tenant Portal</span>
+          </button>
+        )}
       </div>
 
       {saveSuccess && (
